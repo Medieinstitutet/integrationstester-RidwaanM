@@ -1,99 +1,80 @@
-import { init, handleSubmit, createHtml, displayNoResult, movieSort } from './movieApp';
-import { IMovie } from './models/Movie';
-import * as movieService from './services/movieService';
 
-jest.mock('./services/movieService');
+import { handleSubmit, createHtml, displayNoResult } from "./src/ts/movieApp"; 
+import { getData } from "./src/ts/services/movieService"; 
+import { IMovie } from "./src/ts/models/Movie";
 
-describe('movieApp', () => {
-  let container: HTMLDivElement;
+jest.mock("./src/ts/services/movieService"); 
 
+describe("handleSubmit", () => {
   beforeEach(() => {
     document.body.innerHTML = `
       <form id="searchForm">
-        <input type="text" id="searchText" />
-        <button type="submit">Search</button>
+        <input id="searchText" value="movie">
       </form>
       <div id="movie-container"></div>
     `;
-
-    container = document.getElementById('movie-container') as HTMLDivElement;
   });
 
-  test('should initialize form and handle submit event', () => {
-    const form = document.getElementById('searchForm') as HTMLFormElement;
-    const handleSubmitSpy = jest.spyOn(window, 'handleSubmit').mockImplementation(() => {});
+  it("should create HTML when movies are found", async () => {
+    const movies: IMovie[] = [{
+      Title: "Movie 1",
+      Poster: "url",
+      Year: "2022",
+      imdbID: "",
+      Type: ""
+    }];
+    (getData as jest.Mock).mockResolvedValue(movies);
 
-    init();
-    form.dispatchEvent(new Event('submit'));
-
-    expect(handleSubmitSpy).toHaveBeenCalled();
-  });
-
-  test('should fetch and display movies on submit', async () => {
-    const mockMovies: IMovie[] = [
-      { Title: 'Movie 1', Year: '2021', imdbID: 'tt1234567', Type: 'movie', Poster: 'url1' },
-      { Title: 'Movie 2', Year: '2022', imdbID: 'tt2345678', Type: 'movie', Poster: 'url2' },
-    ];
-
-    (movieService.getData as jest.Mock).mockResolvedValue(mockMovies);
-
-    const input = document.getElementById('searchText') as HTMLInputElement;
-    input.value = 'test';
     await handleSubmit();
 
-    expect(container.innerHTML).toContain('Movie 1');
-    expect(container.innerHTML).toContain('Movie 2');
+    const container = document.getElementById("movie-container");
+    expect(container?.innerHTML).toContain("Movie 1");
   });
 
-  test('should display no results message if no movies found', async () => {
-    (movieService.getData as jest.Mock).mockResolvedValue([]);
+  it("should display no result message when no movies are found", async () => {
+    (getData as jest.Mock).mockResolvedValue([]);
 
-    const input = document.getElementById('searchText') as HTMLInputElement;
-    input.value = 'test';
     await handleSubmit();
 
-    expect(container.innerHTML).toContain('Inga sökresultat att visa');
+    const container = document.getElementById("movie-container");
+    expect(container?.innerHTML).toContain("Inga sökresultat att visa");
   });
 
-  test('should create HTML elements for movies', () => {
+  it("should display no result message when the API call fails", async () => {
+    (getData as jest.Mock).mockRejectedValue({});
+
+    await handleSubmit();
+
+    const container = document.getElementById("movie-container");
+    expect(container?.innerHTML).toContain("Inga sökresultat att visa");
+  });
+});
+
+describe("createHtml", () => {
+  it("should create correct HTML structure for movie list", () => {
+    document.body.innerHTML = `<div id="movie-container"></div>`;
     const movies: IMovie[] = [
-      { Title: 'Movie 1', Year: '2021', imdbID: 'tt1234567', Type: 'movie', Poster: 'url1' },
-      { Title: 'Movie 2', Year: '2022', imdbID: 'tt2345678', Type: 'movie', Poster: 'url2' },
+      { Title: "Movie 1", Poster: "url1", Year: "2022", imdbID: "", Type: "" },
+      { Title: "Movie 2", Poster: "url2", Year: "2021", imdbID: "", Type: "" },
     ];
 
+    const container = document.getElementById("movie-container") as HTMLDivElement;
     createHtml(movies, container);
 
-    expect(container.innerHTML).toContain('Movie 1');
-    expect(container.innerHTML).toContain('Movie 2');
+    const movieDivs = container.getElementsByClassName("movie");
+    expect(movieDivs.length).toBe(2);
+    expect(movieDivs[0].innerHTML).toContain("Movie 1");
+    expect(movieDivs[1].innerHTML).toContain("Movie 2");
   });
+});
 
-  test('should display no result message', () => {
+describe("displayNoResult", () => {
+  it("should display no result message", () => {
+    document.body.innerHTML = `<div id="movie-container"></div>`;
+    const container = document.getElementById("movie-container") as HTMLDivElement;
+
     displayNoResult(container);
 
-    expect(container.innerHTML).toContain('Inga sökresultat att visa');
-  });
-
-  test('should sort movies in descending order by default', () => {
-    const movies: IMovie[] = [
-      { Title: 'B Movie', Year: '2021', imdbID: 'tt1234567', Type: 'movie', Poster: 'url1' },
-      { Title: 'A Movie', Year: '2022', imdbID: 'tt2345678', Type: 'movie', Poster: 'url2' },
-    ];
-
-    const sortedMovies = movieSort(movies);
-
-    expect(sortedMovies[0].Title).toBe('A Movie');
-    expect(sortedMovies[1].Title).toBe('B Movie');
-  });
-
-  test('should sort movies in ascending order', () => {
-    const movies: IMovie[] = [
-      { Title: 'B Movie', Year: '2021', imdbID: 'tt1234567', Type: 'movie', Poster: 'url1' },
-      { Title: 'A Movie', Year: '2022', imdbID: 'tt2345678', Type: 'movie', Poster: 'url2' },
-    ];
-
-    const sortedMovies = movieSort(movies, false);
-
-    expect(sortedMovies[0].Title).toBe('B Movie');
-    expect(sortedMovies[1].Title).toBe('A Movie');
+    expect(container.innerHTML).toContain("Inga sökresultat att visa");
   });
 });

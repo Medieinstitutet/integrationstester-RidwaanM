@@ -1,32 +1,43 @@
-import { filterMoviesByRating } from './functions';
-import { IMovie } from './models/Movie';
 
-describe('functions', () => {
-  test('should filter movies by minimum rating', () => {
-    const movies: IMovie[] = [
-      { Title: 'Movie 1', Year: '2021', imdbID: 'tt1234567', Type: 'movie', Poster: 'url1', imdbRating: '7.5' },
-      { Title: 'Movie 2', Year: '2022', imdbID: 'tt2345678', Type: 'movie', Poster: 'url2', imdbRating: '6.0' },
-      { Title: 'Movie 3', Year: '2020', imdbID: 'tt3456789', Type: 'movie', Poster: 'url3', imdbRating: '8.0' },
-    ];
+import { movieSort } from "./src/ts/functions";
+import { IMovie } from "./src/ts/models/Movie";
 
-    const filteredMovies = filterMoviesByRating(movies, 7.0);
+describe("movieSort", () => {
+  const unsortedMovies: IMovie[] = [
+    {
+      Title: "B Movie", Poster: "url1", Year: "2020",
+      imdbID: "",
+      Type: ""
+    },
+    {
+      Title: "A Movie", Poster: "url2", Year: "2021",
+      imdbID: "",
+      Type: ""
+    },
+    {
+      Title: "C Movie", Poster: "url3", Year: "2019",
+      imdbID: "",
+      Type: ""
+    },
+  ];
 
-    expect(filteredMovies.length).toBe(2);
-    expect(filteredMovies).toEqual([
-      { Title: 'Movie 1', Year: '2021', imdbID: 'tt1234567', Type: 'movie', Poster: 'url1', imdbRating: '7.5' },
-      { Title: 'Movie 3', Year: '2020', imdbID: 'tt3456789', Type: 'movie', Poster: 'url3', imdbRating: '8.0' },
-    ]);
+  test("should sort movies in descending order by default", () => {
+    const sortedMovies = movieSort(unsortedMovies);
+    expect(sortedMovies[0].Title).toBe("A Movie");
+    expect(sortedMovies[1].Title).toBe("B Movie");
+    expect(sortedMovies[2].Title).toBe("C Movie");
   });
 
-  test('should return empty array if no movies meet the minimum rating', () => {
-    const movies: IMovie[] = [
-      { Title: 'Movie 1', Year: '2021', imdbID: 'tt1234567', Type: 'movie', Poster: 'url1', imdbRating: '5.5' },
-      { Title: 'Movie 2', Year: '2022', imdbID: 'tt2345678', Type: 'movie', Poster: 'url2', imdbRating: '6.0' },
-    ];
+  test("should sort movies in ascending order when desc is false", () => {
+    const sortedMovies = movieSort(unsortedMovies, false);
+    expect(sortedMovies[0].Title).toBe("C Movie");
+    expect(sortedMovies[1].Title).toBe("B Movie");
+    expect(sortedMovies[2].Title).toBe("A Movie");
+  });
 
-    const filteredMovies = filterMoviesByRating(movies, 7.0);
-
-    expect(filteredMovies.length).toBe(0);
-    expect(filteredMovies).toEqual([]);
+  test("should return the same array if the array is empty", () => {
+    const emptyMovies: IMovie[] = [];
+    const sortedMovies = movieSort(emptyMovies);
+    expect(sortedMovies).toEqual([]);
   });
 });

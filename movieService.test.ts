@@ -1,40 +1,35 @@
-import axios from 'axios';
-import MockAdapter from 'axios-mock-adapter';
-import { getData } from './services/movieService';
-import { IOmdbResponse } from './models/IOmdbResponse';
-import { IMovie } from './models/Movie';
 
-describe('movieService', () => {
-  let mock: MockAdapter;
+import { getData } from "./src/ts/services/movieService";
+import axios from "axios";
+import { IMovie } from "./src/ts/models/Movie";
 
-  beforeAll(() => {
-    mock = new MockAdapter(axios);
+jest.mock("axios");
+const mockedAxios = axios as jest.Mocked<typeof axios>;
+
+describe("getData", () => {
+  it("should return a list of movies when the API call is successful", async () => {
+    const movies: IMovie[] = [{
+      Title: "Movie 1", Poster: "url", Year: "2022",
+      imdbID: "",
+      Type: ""
+    }];
+    mockedAxios.get.mockResolvedValue({ data: { Search: movies } });
+    
+    const result = await getData("movie");
+    expect(result).toEqual(movies);
   });
 
-  afterEach(() => {
-    mock.reset();
+  it("should return an empty array when the API call fails", async () => {
+    mockedAxios.get.mockRejectedValue({});
+    
+    const result = await getData("movie");
+    expect(result).toEqual([]);
   });
 
-  test('should fetch movie data successfully', async () => {
-    const mockResponse: IOmdbResponse = {
-      Search: [
-        { Title: 'Movie 1', Year: '2021', imdbID: 'tt1234567', Type: 'movie', Poster: 'url1' },
-        { Title: 'Movie 2', Year: '2022', imdbID: 'tt2345678', Type: 'movie', Poster: 'url2' },
-      ],
-      totalResults: '2',
-      Response: 'True',
-    };
-
-    mock.onGet('http://omdbapi.com/?apikey=416ed51a&s=test').reply(200, mockResponse);
-
-    const data = await getData('test');
-    expect(data).toEqual(mockResponse.Search);
-  });
-
-  test('should handle errors and return an empty array', async () => {
-    mock.onGet('http://omdbapi.com/?apikey=416ed51a&s=test').reply(500);
-
-    const data = await getData('test');
-    expect(data).toEqual([]);
+  it("should return an empty array when no movies are found", async () => {
+    mockedAxios.get.mockResolvedValue({ data: { Search: [] } });
+    
+    const result = await getData("movie");
+    expect(result).toEqual([]);
   });
 });
